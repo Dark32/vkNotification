@@ -152,7 +152,11 @@ class Main:
         return poll.get('server'), poll.get('key'), poll.get('ts'), poll.get('pts')
 
     def __get_long_poll_history(self, fields='photo,online,screen_name'):  # получаем историю ЛС
-        data = self.vk.method('messages.getLongPollHistory', {'ts': self.ts, 'pts': self.pts, 'fields': fields})
+        try:
+            data = self.vk.method('messages.getLongPollHistory', {'ts': self.ts, 'pts': self.pts, 'fields': fields})
+        except Exception as e:  # при запросе произошла непредвиденная ошибка
+            print(e)  # выводим её
+            return  # и пропускае
         self.__degug(data)
         messages_raw = data.get('messages')  # получаем сообещния
         profiles = data.get('profiles')  # получаем профили
