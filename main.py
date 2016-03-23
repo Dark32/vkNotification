@@ -21,31 +21,34 @@ class Main:
         7: 'web'
     }
 
-    def __init__(self, login, password, debug_stream=logging.ERROR, debug_file=logging.DEBUG, loop=False):
+    def __init__(self, login, password, debug_stream=logging.ERROR, debug_file=logging.DEBUG, loop=False, event_codes=None):
+        if event_codes is None:
+             event_codes = []
+        self.event_codes = event_codes
         self.codes = {  # ответы
-            # 0: lambda u: 'Сообение %s удалено' % u[1],
-            # 1: lambda u: 'Замена флагов сообщения %s на %s' % (u[1], u[2]),
-            # 2: lambda u: 'Установка флагов сообщени %s на %s' % (u[1], u[2]),
-            # 3: lambda u: 'сброс флагов сообщения %s на %s' % (u[1], u[2]),
-            # 4: lambda u: 'Добавление нового сообщения %s' % (u[1]),
-            # 6: lambda u: 'Вы прочитали все входящие сообщения от %s  по %s' % (get_user(vk, u[1]).get_name(), u[2]),
+            0: lambda u: 'Сообение %s удалено' % u[1],
+            1: lambda u: 'Замена флагов сообщения %s на %s' % (u[1], u[2]),
+            2: lambda u: 'Установка флагов сообщени %s на %s' % (u[1], u[2]),
+            3: lambda u: 'сброс флагов сообщения %s на %s' % (u[1], u[2]),
+            4: lambda u: 'Добавление нового сообщения %s' % (u[1]),
+            6: lambda u: 'Вы прочитали все входящие сообщения от %s  по %s' % (get_user(vk, u[1]).get_name(), u[2]),
             7: lambda u: '%s прочитал все исходящие сообщения по %s' % (self.__get_name(u[1]), u[2]),
             8: lambda u: '%s онлайн (%s)' % (self.__get_user(u[1]).get_name(), self.platforms.get(u[2] % 256)),
             9: lambda u: '%s оффлайн (%s)' % (self.__get_user(u[1]).get_name(), ("вышел" if u[1] == 0 else "ушёл")),
-            # 10: lambda u: 'сброс флагов фильтрации по папкам для чата/собеседника с %s' % (u[1]),
-            # 11: lambda u: 'замена флагов фильтрации по папкам для чата/собеседника с %s' % (u[1]),
-            # 12: lambda u: 'установка флагов фильтрации по папкам для чата/собеседника с %s' % (u[1]),
-            # 13: lambda u: 'замена флагов всех сообщений с заданным %s' % (u[1]),
-            # 14: lambda u: 'установка флагов всех сообщений с заданным %s' % (u[1]),
-            # 15: lambda u: 'сброс флагов всех сообщений с заданным %s' % (u[1]),
-            # 51: lambda u: 'один из параметров (состав, тема) беседы %s были изменены' % (u[1]),
+            10: lambda u: 'сброс флагов фильтрации по папкам для чата/собеседника с %s' % (u[1]),
+            11: lambda u: 'замена флагов фильтрации по папкам для чата/собеседника с %s' % (u[1]),
+            12: lambda u: 'установка флагов фильтрации по папкам для чата/собеседника с %s' % (u[1]),
+            13: lambda u: 'замена флагов всех сообщений с заданным %s' % (u[1]),
+            14: lambda u: 'установка флагов всех сообщений с заданным %s' % (u[1]),
+            15: lambda u: 'сброс флагов всех сообщений с заданным %s' % (u[1]),
+            51: lambda u: 'один из параметров (состав, тема) беседы %s были изменены' % (u[1]),
             61: lambda u: '%s печатает текст в диалоге' % (self.__get_user(u[1]).get_name()),
             62: lambda u: '%s печатает текст в беседе %s' % (
                 self.__get_user(u[1]).get_name(), self.__get_chat(u[2]).get_name()),
-            # 70: lambda u, vk: 'пользователь %s совершил звонок имеющий идентификатор %s' %
-            #                   (get_user(vk, u[1]).get_name(), u[2]),
-            # 80: lambda u, vk: 'новый счетчик непрочитанных в левом меню стал равен %s' % (u[1]),
-            # 114: lambda u, vk: 'изменились настройки оповещений %s' % (u[1]),
+            70: lambda u, vk: 'пользователь %s совершил звонок имеющий идентификатор %s' %
+                              (get_user(vk, u[1]).get_name(), u[2]),
+            80: lambda u, vk: 'новый счетчик непрочитанных в левом меню стал равен %s' % (u[1]),
+            114: lambda u, vk: 'изменились настройки оповещений %s' % (u[1]),
         }
         # получить сервер событий
         self.get_long_poll = lambda: self.vk.method('messages.getLongPollServer', {'need_pts': 1})
@@ -178,7 +181,7 @@ class Main:
 
     def __check_event(self, event):  # нужно ли выводить событие
         code = self.codes.get(event[0])  # пробуем получить обработчик события
-        if code is not None:  # если получили
+        if code is not None and event[0] in self.event_codes:  # если получили
             return code(event)  # возвращаем обработанный результат
 
     def __get_name(self, _id):  # получаем имя по ID
@@ -252,28 +255,3 @@ class Main:
         fh.setFormatter(formatter)
         self.logger.addHandler(ch)
         self.logger.addHandler(fh)
-        
-    def conf_test(cfg_path):
-        if os.path.isfile(cfg_path): #проверяет наличие конфига
-            file = open(cfg_path)
-            conf = '{'+file.read()+'}' #так и должно быть
-            file.close()
-            conf = json.loads(conf) #конвертирование из string в dictionary (строка -> словарь)
-            if (conf['первый'] == 'true'): #проверка конфига
-                print('test')
-            if (conf['второй'] == 'true'): 
-                print('test2')
-            if (conf['третий'] == 'true'):
-                print('test3')
-        else:
-        make_conf(cfg_path) #нет конфига -> создай конфиг
-    def make_conf(cfg_path):
-        file = open(cfg_path, 'w') #То, что ниже, — шаблон конфига
-        tmp = '''
-"первый": "true",
-"второй": "true",
-"третий": "true"
-'''
-        file.write(tmp) #запиши изменения
-        file.close()
-        сonf_test(cfg_path) #вернись к проверке
