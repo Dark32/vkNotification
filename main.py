@@ -101,8 +101,10 @@ class Main:
         self.ts = data['ts']  # получаем новый временной штамп
         events = data.get('updates')  # получаем события
         self.__events(events)  # проверяем события
-        messages, self.pts = self.__get_long_poll_history()  # получаем лс
-        self.__message(messages)  # выводим лс
+        lph = self.__get_long_poll_history()
+        if lph is not None:
+            messages, self.pts = self.__get_long_poll_history()  # получаем лс
+            self.__message(messages)  # выводим лс
 
     def __log(self, msg):  # логи, если они включены
         self.logger.log(logging.CRITICAL, msg)
@@ -159,7 +161,7 @@ class Main:
             data = self.vk.method('messages.getLongPollHistory', {'ts': self.ts, 'pts': self.pts, 'fields': fields})
         except Exception as e:  # при запросе произошла непредвиденная ошибка
             print(e)  # выводим её
-            return  # и пропускае
+            return # и пропускае
         self.__degug(data)
         messages_raw = data.get('messages')  # получаем сообещния
         profiles = data.get('profiles')  # получаем профили
