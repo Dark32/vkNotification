@@ -103,7 +103,7 @@ class Main:
         self.__events(events)  # проверяем события
         lph = self.__get_long_poll_history()
         if lph is not None:
-            messages, self.pts = self.__get_long_poll_history()  # получаем лс
+            messages, self.pts = lph  # получаем лс
             self.__message(messages)  # выводим лс
 
     def __log(self, msg):  # логи, если они включены
